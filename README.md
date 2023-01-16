@@ -22,4 +22,4 @@ pip install -r requirments.txt
 * Saving results for future analysis
 
 ## Demo
-![demo](https://user-images.githubusercontent.com/107580083/212566276-d77da199-1bd6-4287-a8aa-aad29e8e5415.png)
+![demo](https://user-images.githubusercontent.com/107580083/212638687-4a5641aa-3c69-4051-a190-77161e187edf.png)

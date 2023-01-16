@@ -1,0 +1,62 @@
+POSSIBLE_CHOICES:
+  1: junior
+  2: middle
+  3: senior
+  4: all_levels
+TECHNOLOGIES:
+  ' AI ': 0
+  API: 0
+  AWS: 0
+  Artificial intelligence: 0
+  Azure: 0
+  CSS: 0
+  DRF: 0
+  Django: 0
+  FastAPI: 0
+  Flask: 0
+  GIT: 0
+  Graphql: 0
+  HTML: 0
+  JS: 0
+  JavaScript: 0
+  Machine Learning: 0
+  MongoDB: 0
+  MySQL: 0
+  NoSQL: 0
+  OOP: 0
+  Postgresql: 0
+  Python: 0
+  REST: 0
+  SQL: 0
+  SQLAlchemy: 0
+  SQLite: 0
+  Tornado: 0
+  aiohttp: 0
+  algorithms: 0
+  angular: 0
+  asyncio: 0
+  beautifulsoup: 0
+  decorators: 0
+  docker: 0
+  fullstack: 0
+  generators: 0
+  iterators: 0
+  linux: 0
+  microservice: 0
+  multiprocessing: 0
+  networking: 0
+  numpy: 0
+  opencv: 0
+  pandas: 0
+  pytest: 0
+  react: 0
+  redis: 0
+  regex: 0
+  requests: 0
+  scraping: 0
+  test driven development: 0
+  twisted: 0
+  unittest: 0
+  unix: 0
+
+TIME_CREATED: '2023_01_16_10_17_55'

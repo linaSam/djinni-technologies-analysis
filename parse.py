@@ -6,88 +6,46 @@ import time
 from datetime import datetime
 from urllib.parse import urljoin
 
-import aiohttp as aiohttp
 import httpx
 from httpx import AsyncClient
-import requests
 from bs4 import BeautifulSoup
+import yaml
 
 DOMAIN_URL = "https://djinni.co"
 PYTHON_POSITIONS_URL = DOMAIN_URL + "/jobs/?primary_keyword=Python"
 
-technologies = {
-    "Python": 0,
-    "SQL": 0,
-    "REST": 0,
-    "API": 0,
-    "GIT": 0,
-    "Django": 0,
-    "docker": 0,
-    "Postgresql": 0,
-    "JS": 0,
-    "JavaScript": 0,
-    "AWS": 0,
-    "Flask": 0,
-    "HTML": 0,
-    "redis": 0,
-    "linux": 0,
-    "fullstack": 0,
-    "Artificial intelligence": 0,
-    " AI ": 0,
-    "MySQL": 0,
-    "OOP": 0,
-    "react": 0,
-    "CSS": 0,
-    "MongoDB": 0,
-    "FastAPI": 0,
-    "DRF": 0,
-    "Machine Learning": 0,
-    "angular": 0,
-    "NoSQL": 0,
-    "pytest": 0,
-    "networking": 0,
-    "SQLAlchemy": 0,
-    "microservice": 0,
-    "pandas": 0,
-    "algorithms": 0,
-    "aiohttp": 0,
-    "Azure": 0,
-    "Graphql": 0,
-    "asyncio": 0,
-    "unittest": 0,
-    "beautifulsoup": 0,
-    "unix": 0,
-    "Tornado": 0,
-    "opencv": 0,
-    "numpy": 0,
-    "multiprocessing": 0,
-    "SQLite": 0,
-    "requests": 0,
-    "scraping": 0,
-    "regex": 0,
-    "decorators": 0,
-    "generators": 0,
-    "test driven development": 0,
-    "twisted": 0,
-    "iterators": 0
-}
+with open('config.yml') as c:
+    config = yaml.full_load(c)
+technologies = config["TECHNOLOGIES"]
 
 junior_technologies = copy.deepcopy(technologies)
 middle_technologies = copy.deepcopy(technologies)
 senior_technologies = copy.deepcopy(technologies)
 
 
+def add_time_to_config(time_now):
+    with open('config.yml') as f:
+        doc = yaml.full_load(f)
+
+    doc['TIME_CREATED'] = time_now
+
+    with open('config.yml', 'w') as f:
+        yaml.dump(doc, f)
+
+
 def write_result(info_technologies: dict) -> None:
     folder_path = os.path.abspath("data_storage")
+    time_now = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+    add_time_to_config(time_now)
     if "years_of_experience" in info_technologies:
         filename = os.path.join(
             folder_path,
-            f"{info_technologies['years_of_experience']}_{datetime.now().strftime('%Y-%m-%d_%H_%M_%S')}.csv"
+            f"{info_technologies['years_of_experience']}_{time_now}.csv"
         )
     else:
         filename = os.path.join(
             folder_path,
-            f"all_levels_{datetime.now().strftime('%Y-%m-%d %H_%M_%S')}.csv"
+            f"all_levels_{time_now}.csv"
         )
     with open(filename, "w") as f:
         writer = csv.writer(f)
@@ -121,7 +79,6 @@ def scrape_for_experience_group(index, soup):
         scrape_technologies(soup, junior_technologies)
 
 
-#API
 def define_experience_group(position_link: str) -> None:
     link = urljoin(DOMAIN_URL, position_link)
     response = httpx.get(link)
@@ -154,14 +111,12 @@ def get_single_page_position(page_soup: BeautifulSoup):
     return [define_experience_group(position_link.get("href")) for position_link in positions]
 
 
-#API
 async def scrape_links_of_positions(page, client: AsyncClient):
     page = await client.get(PYTHON_POSITIONS_URL, params={"page": page})
     soup = BeautifulSoup(page.content, "html.parser")
     return soup
 
 
-#API
 async def get_first_page():
     response = httpx.get(PYTHON_POSITIONS_URL)
     first_page_soup = BeautifulSoup(response.content, "html.parser")

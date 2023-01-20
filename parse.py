@@ -14,7 +14,7 @@ import yaml
 DOMAIN_URL = "https://djinni.co"
 PYTHON_POSITIONS_URL = DOMAIN_URL + "/jobs/?primary_keyword=Python"
 
-with open('config.yml') as c:
+with open("config.yml") as c:
     config = yaml.full_load(c)
 technologies = config["TECHNOLOGIES"]
 
@@ -24,29 +24,25 @@ senior_technologies = copy.deepcopy(technologies)
 
 
 def add_time_to_config(time_now):
-    with open('config.yml') as f:
+    with open("config.yml") as f:
         doc = yaml.full_load(f)
 
-    doc['TIME_CREATED'] = time_now
+    doc["TIME_CREATED"] = time_now
 
-    with open('config.yml', 'w') as f:
+    with open("config.yml", "w") as f:
         yaml.dump(doc, f)
 
 
 def write_result(info_technologies: dict) -> None:
     folder_path = os.path.abspath("data_storage")
-    time_now = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+    time_now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     add_time_to_config(time_now)
     if "years_of_experience" in info_technologies:
         filename = os.path.join(
-            folder_path,
-            f"{info_technologies['years_of_experience']}_{time_now}.csv"
+            folder_path, f"{info_technologies['years_of_experience']}_{time_now}.csv"
         )
     else:
-        filename = os.path.join(
-            folder_path,
-            f"all_levels_{time_now}.csv"
-        )
+        filename = os.path.join(folder_path, f"all_levels_{time_now}.csv")
     with open(filename, "w") as f:
         writer = csv.writer(f)
         for key, value in info_technologies.items():
@@ -79,20 +75,26 @@ def prepare_file_according_to_experience(index, soup):
         parse_technologies(soup, junior_technologies)
 
 
-async def define_experience_for_position(position_link: str, client: AsyncClient) -> None:
+async def define_experience_for_position(
+    position_link: str, client: AsyncClient
+) -> None:
     link = urljoin(DOMAIN_URL, position_link)
     response = await client.get(link)
     soup = BeautifulSoup(response.content, "html.parser")
 
-    text_with_years = soup.select_one(".job-additional-info").get_text(strip=True, separator=" ")
+    text_with_years = soup.select_one(".job-additional-info").get_text(
+        strip=True, separator=" "
+    )
     if "років досвіду" in text_with_years:
         experience_index = text_with_years[text_with_years.find("років досвіду") - 2]
     elif "роки досвіду" in text_with_years:
         experience_index = text_with_years[text_with_years.find("роки досвіду") - 2]
     else:
         experience_index = text_with_years[
-                           (text_with_years.find("досвіду") - 4):(text_with_years.find("досвіду") - 1)
-                           ]
+            (text_with_years.find("досвіду") - 4) : (
+                text_with_years.find("досвіду") - 1
+            )
+        ]
 
     prepare_file_according_to_experience(experience_index, soup)
 
@@ -110,7 +112,10 @@ async def get_information_about_position(page_soup: BeautifulSoup):
     positions = page_soup.select(".profile")
     async with AsyncClient() as client:
         await asyncio.gather(
-            *[define_experience_for_position(position_link.get("href"), client) for position_link in positions]
+            *[
+                define_experience_for_position(position_link.get("href"), client)
+                for position_link in positions
+            ]
         )
 
 
@@ -130,7 +135,10 @@ async def main():
 
     async with AsyncClient() as client:
         positions_from_all_pages = await asyncio.gather(
-            *[get_links_of_positions_from_page(page, client) for page in range(2, num_pages + 1)]
+            *[
+                get_links_of_positions_from_page(page, client)
+                for page in range(2, num_pages + 1)
+            ]
         )
         for position in positions_from_all_pages:
             await get_information_about_position(position)
@@ -141,7 +149,7 @@ async def main():
     write_result(technologies)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     start_time = time.perf_counter()
     asyncio.run(main())
     end_time = time.perf_counter()

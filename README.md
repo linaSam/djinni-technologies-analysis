@@ -1,6 +1,6 @@
 # 🔍 Djinni Python technologies analysis
 
-Project for understanding stack of technologies Python developer needs to know in Ukrainian IT market based by vacancies posted at Djinni.com
+The purpose of the project is to help understand the stack of technologies Python developer needs to know in the Ukrainian IT market based on vacancies posted at Djinni.com
 
 ## Installation
 

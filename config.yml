@@ -5,6 +5,7 @@ POSSIBLE_CHOICES:
   4: all_levels
 TECHNOLOGIES:
   ' AI ': 0
+  ' JS ': 0
   API: 0
   AWS: 0
   Artificial intelligence: 0
@@ -17,7 +18,6 @@ TECHNOLOGIES:
   GIT: 0
   Graphql: 0
   HTML: 0
-  JS: 0
   JavaScript: 0
   Machine Learning: 0
   MongoDB: 0
@@ -58,5 +58,4 @@ TECHNOLOGIES:
   twisted: 0
   unittest: 0
   unix: 0
-
-TIME_CREATED: '2023_01_16_10_17_55'
+TIME_CREATED: '2023_01_20_15_00_16'

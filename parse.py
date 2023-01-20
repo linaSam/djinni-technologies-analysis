@@ -54,7 +54,7 @@ def write_result(info_technologies: dict) -> None:
                 writer.writerow([key, value])
 
 
-def scrape_technologies(soup, some_technologies):
+def parse_technologies(soup, some_technologies):
     if soup.select_one(".profile-page-section") is not None:
         info = soup.select_one(".profile-page-section").text
         for item in technologies:
@@ -63,25 +63,25 @@ def scrape_technologies(soup, some_technologies):
                 technologies[item] += 1
 
 
-def scrape_for_experience_group(index, soup):
+def prepare_file_according_to_experience(index, soup):
     if index.isdigit():
         if int(index) <= 2:
             junior_technologies["years_of_experience"] = "junior"
-            scrape_technologies(soup, junior_technologies)
+            parse_technologies(soup, junior_technologies)
         elif int(index) >= 5:
             senior_technologies["years_of_experience"] = "senior"
-            scrape_technologies(soup, senior_technologies)
+            parse_technologies(soup, senior_technologies)
         else:
             middle_technologies["years_of_experience"] = "middle"
-            scrape_technologies(soup, middle_technologies)
+            parse_technologies(soup, middle_technologies)
     else:
         junior_technologies["years_of_experience"] = "junior"
-        scrape_technologies(soup, junior_technologies)
+        parse_technologies(soup, junior_technologies)
 
 
-def define_experience_group(position_link: str) -> None:
+async def define_experience_for_position(position_link: str, client: AsyncClient) -> None:
     link = urljoin(DOMAIN_URL, position_link)
-    response = httpx.get(link)
+    response = await client.get(link)
     soup = BeautifulSoup(response.content, "html.parser")
 
     text_with_years = soup.select_one(".job-additional-info").get_text(strip=True, separator=" ")
@@ -94,10 +94,10 @@ def define_experience_group(position_link: str) -> None:
                            (text_with_years.find("досвіду") - 4):(text_with_years.find("досвіду") - 1)
                            ]
 
-    scrape_for_experience_group(experience_index, soup)
+    prepare_file_according_to_experience(experience_index, soup)
 
 
-def get_num_pages(page_soup: BeautifulSoup) -> int:
+def get_number_of_pages(page_soup: BeautifulSoup) -> int:
     pagination = page_soup.select_one(".pagination")
 
     if pagination is None:
@@ -106,31 +106,34 @@ def get_num_pages(page_soup: BeautifulSoup) -> int:
     return int(pagination.select("a.page-link")[-2].text)
 
 
-def get_single_page_position(page_soup: BeautifulSoup):
+async def get_information_about_position(page_soup: BeautifulSoup):
     positions = page_soup.select(".profile")
-    return [define_experience_group(position_link.get("href")) for position_link in positions]
+    async with AsyncClient() as client:
+        await asyncio.gather(
+            *[define_experience_for_position(position_link.get("href"), client) for position_link in positions]
+        )
 
 
-async def scrape_links_of_positions(page, client: AsyncClient):
+async def get_links_of_positions_from_page(page, client: AsyncClient):
     page = await client.get(PYTHON_POSITIONS_URL, params={"page": page})
     soup = BeautifulSoup(page.content, "html.parser")
     return soup
 
 
-async def get_first_page():
+async def main():
     response = httpx.get(PYTHON_POSITIONS_URL)
     first_page_soup = BeautifulSoup(response.content, "html.parser")
 
-    num_pages = get_num_pages(first_page_soup)
+    num_pages = get_number_of_pages(first_page_soup)
 
-    get_single_page_position(first_page_soup)
+    await get_information_about_position(first_page_soup)
 
     async with AsyncClient() as client:
-        all_positions = await asyncio.gather(
-            *[scrape_links_of_positions(page, client) for page in range(2, num_pages + 1)]
+        positions_from_all_pages = await asyncio.gather(
+            *[get_links_of_positions_from_page(page, client) for page in range(2, num_pages + 1)]
         )
-        for position in all_positions:
-            get_single_page_position(position)
+        for position in positions_from_all_pages:
+            await get_information_about_position(position)
 
     write_result(junior_technologies)
     write_result(middle_technologies)
@@ -140,6 +143,6 @@ async def get_first_page():
 
 if __name__ == '__main__':
     start_time = time.perf_counter()
-    asyncio.run(get_first_page())
+    asyncio.run(main())
     end_time = time.perf_counter()
     print("Elapsed:", end_time - start_time)

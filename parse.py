@@ -2,6 +2,7 @@ import asyncio
 import copy
 import csv
 import os
+import logging
 import time
 from datetime import datetime
 from urllib.parse import urljoin
@@ -10,6 +11,9 @@ import httpx
 from httpx import AsyncClient
 from bs4 import BeautifulSoup
 import yaml
+
+
+logging.basicConfig(level=logging.INFO)
 
 DOMAIN_URL = "https://djinni.co"
 PYTHON_POSITIONS_URL = DOMAIN_URL + "/jobs/?primary_keyword=Python"
@@ -23,34 +27,36 @@ middle_technologies = copy.deepcopy(technologies)
 senior_technologies = copy.deepcopy(technologies)
 
 
-def add_time_to_config(time_now):
-    with open("config.yml") as f:
-        doc = yaml.full_load(f)
+def add_time_to_config(time_now) -> None:
+    with open("config.yml") as file:
+        data = yaml.full_load(file)
 
-    doc["TIME_CREATED"] = time_now
+    data["TIME_CREATED"] = time_now
 
-    with open("config.yml", "w") as f:
-        yaml.dump(doc, f)
+    with open("config.yml", "w") as file:
+        yaml.dump(data, file)
 
 
-def write_result(info_technologies: dict) -> None:
+def write_result(technologies_info: dict) -> None:
     folder_path = os.path.abspath("data_storage")
     time_now = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     add_time_to_config(time_now)
-    if "years_of_experience" in info_technologies:
+
+    if "years_of_experience" in technologies_info:
         filename = os.path.join(
-            folder_path, f"{info_technologies['years_of_experience']}_{time_now}.csv"
+            folder_path, f"{technologies_info['years_of_experience']}_{time_now}.csv"
         )
     else:
         filename = os.path.join(folder_path, f"all_levels_{time_now}.csv")
+
     with open(filename, "w") as f:
         writer = csv.writer(f)
-        for key, value in info_technologies.items():
+        for key, value in technologies_info.items():
             if key != "years_of_experience" and value != 0:
                 writer.writerow([key, value])
 
 
-def parse_technologies(soup, some_technologies):
+def parse_technologies(soup, some_technologies) -> None:
     if soup.select_one(".profile-page-section") is not None:
         info = soup.select_one(".profile-page-section").text
         for item in technologies:
@@ -59,7 +65,7 @@ def parse_technologies(soup, some_technologies):
                 technologies[item] += 1
 
 
-def prepare_file_according_to_experience(index, soup):
+def prepare_file_according_to_experience(index, soup) -> None:
     if index.isdigit():
         if int(index) <= 2:
             junior_technologies["years_of_experience"] = "junior"
@@ -85,13 +91,14 @@ async def define_experience_for_position(
     text_with_years = soup.select_one(".job-additional-info").get_text(
         strip=True, separator=" "
     )
+
     if "років досвіду" in text_with_years:
         experience_index = text_with_years[text_with_years.find("років досвіду") - 2]
     elif "роки досвіду" in text_with_years:
         experience_index = text_with_years[text_with_years.find("роки досвіду") - 2]
     else:
         experience_index = text_with_years[
-            (text_with_years.find("досвіду") - 4) : (
+            (text_with_years.find("досвіду") - 4): (
                 text_with_years.find("досвіду") - 1
             )
         ]
@@ -108,7 +115,7 @@ def get_number_of_pages(page_soup: BeautifulSoup) -> int:
     return int(pagination.select("a.page-link")[-2].text)
 
 
-async def get_information_about_position(page_soup: BeautifulSoup):
+async def get_information_about_position(page_soup: BeautifulSoup) -> None:
     positions = page_soup.select(".profile")
     async with AsyncClient() as client:
         await asyncio.gather(
@@ -119,13 +126,15 @@ async def get_information_about_position(page_soup: BeautifulSoup):
         )
 
 
-async def get_links_of_positions_from_page(page, client: AsyncClient):
+async def get_links_of_positions_from_page(page, client: AsyncClient) -> BeautifulSoup:
     page = await client.get(PYTHON_POSITIONS_URL, params={"page": page})
     soup = BeautifulSoup(page.content, "html.parser")
     return soup
 
 
-async def main():
+async def main() -> None:
+    logging.info('Process of collecting data started')
+
     response = httpx.get(PYTHON_POSITIONS_URL)
     first_page_soup = BeautifulSoup(response.content, "html.parser")
 
@@ -142,11 +151,14 @@ async def main():
         )
         for position in positions_from_all_pages:
             await get_information_about_position(position)
+    logging.info('Process of collecting data finished')
 
+    logging.info('Process of writing collected data to files started')
     write_result(junior_technologies)
     write_result(middle_technologies)
     write_result(senior_technologies)
     write_result(technologies)
+    logging.info('Files with collected data are ready for analysis')
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ git clone https://github.com/linaSam/djinni-technologies-analysis
 cd djinni_technologies
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirments.txt
+pip install -r requirements.txt
 ```
 
 ## Features
